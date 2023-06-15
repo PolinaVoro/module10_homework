@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+    <script defer src="page2.js"></script>
+    <title>Запрос картинок</title>
+</head>
+
+<body>
+
+
+  <h1>Чат</h1>
+
+  <div id="chatWindow"></div>
+
+  <input type="text" id="messageInput" placeholder="Введите сообщение">
+  <button id="sendButton">Отправить</button>
+  <button id="locationButton">Гео-локация</button>
+
+  <script>
+    const chatWindow = document.getElementById('chatWindow');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const locationButton = document.getElementById('locationButton');
+
+    const socket = new WebSocket('wss://echo-ws-service.herokuapp.com');
+
+    // Обработчик открытия соединения
+    socket.onopen = () => {
+      console.log('Соединение установлено');
+    };
+
+    // Обработчик получения сообщения
+    socket.onmessage = event => {
+      const message = event.data;
+      displayMessage(message);
+    };
+
+    // Обработчик закрытия соединения
+    socket.onclose = () => {
+      console.log('Соединение закрыто');
+    };
+
+    // Обработчик ошибки
+    socket.onerror = error => {
+      console.error('Произошла ошибка:', error);
+    };
+
+    // Функция для отображения сообщения в окне чата
+    function displayMessage(message) {
+      const messageElement = document.createElement('p');
+      messageElement.textContent = message;
+      chatWindow.appendChild(messageElement);
+    }
+
+    // Обработчик клика на кнопке "Отправить"
+    sendButton.addEventListener('click', () => {
+      const message = messageInput.value;
+      socket.send(message);
+      displayMessage(message);
+      messageInput.value = '';
+    });
+
+    // Обработчик клика на кнопке "Гео-локация"
+    locationButton.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          const locationUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}&zoom=15`;
+          displayMessage(` href="${locationUrl}" target="_blank" `);
+          socket.send(`Гео-локация: ${latitude}, ${longitude}`);
+        }, error => {
+          console.error('Ошибка получения гео-локации:', error);
+        });
+      } else {
+        console.error('Гео-локация не поддерживается');
+      }
+    });
+  </script>
+
+
+</body>
+
+</html>
